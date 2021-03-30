@@ -39,7 +39,6 @@ except OSError:
                     'logging': 1,
                     }
     config['EXPERIMENTAL'] = {
-                    'MULTITHREADED': 'True',
                     'DEBUG': 'False',
                     }
 
@@ -55,7 +54,6 @@ PASSWORD = config['LOGIN']['PASSWORD']
 cszPort = config['OTHER']['cszPort']
 FILENAME = config['OTHER']['filename']
 LOGGING = config['OTHER']['logging']
-MULTITHREADED = config['EXPERIMENTAL']['MULTITHREADED']
 DEBUG = config['EXPERIMENTAL']['DEBUG']
 
 # Convert strings into bool
@@ -63,11 +61,6 @@ if DEBUG == 'True':
     DEBUG = True
 elif DEBUG == 'False':
     DEBUG = False
-
-if MULTITHREADED == 'True':
-    MULTITHREADED = True
-elif MULTITHREADED == 'False':
-    MULTITHREADED = False
 
 # Import debug stuff
 if DEBUG:
