@@ -13,9 +13,16 @@ import pandas as pd
 from plotly import offline
 from datetime import datetime
 from time import sleep
-from sys import platform
+from sys import platform, version_info
 
 from hourly_average_NODAYS_class import HourlyPlot
+
+#Initial check to see if they are running 3.6 or greater
+version_major = version_info.major
+version_minor = version_info.minor
+
+if version_major < 3 or (version_major == 3 and version_minor < 6):
+    print('This program requires Python 3.6 and above, please consider upgrading')
 
 #Initializes colorama to use text colors!
 colorama.init()
