@@ -2,7 +2,7 @@
 Uses Python to thread getting humidity data from an external source
 
 # Requirements
-Python
+Python 3.6 and above
 
 Plotly
 
