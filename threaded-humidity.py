@@ -29,7 +29,7 @@ colorama.init()
 
 #Change this to where you stored your files for Windows to find them correctly
 if platform == 'win32':
-    os.chdir('C:/Users/fallout2/Documents/python/threading_stuff')
+    os.chdir('C:/python/humidity')
 
 config = configparser.ConfigParser()
 try:
