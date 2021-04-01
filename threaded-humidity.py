@@ -29,7 +29,7 @@ colorama.init()
 
 #Change this to where you stored your files for Windows to find them correctly
 if platform == 'win32':
-    os.chdir('C:/python/humidity')
+    os.chdir('C:/Users/fallout2/Documents/python/threading_stuff')
 
 config = configparser.ConfigParser()
 try:
@@ -224,9 +224,10 @@ def threaded_listener(connection):
                 writer = csv.writer(file, quotechar="'")
                 writer.writerow(cszTemp)
         
+            if int(LOGGING) == 1:
+                add_event(f"[RUN: {iteration}] [TEMP: {fTemperature}{cszTemperatureFormat}] [HUM: {fHumidity}%] [PRES: {fPressure}{cszTPressureFormat}] [TIME: {current_time}]", 0)
+        
         iteration += 1
-        if int(LOGGING) == 1:
-            add_event(f"[RUN: {iteration}] [TEMP: {fTemperature}{cszTemperatureFormat}] [HUM: {fHumidity}%] [PRES: {fPressure}{cszTPressureFormat}] [TIME: {current_time}]", 0)
 
     add_event(f'Collection... {colorama.Fore.GREEN}ok{colorama.Fore.RESET}', 0)
     connection.write(b"\x18")
@@ -367,7 +368,7 @@ def settings():
             continue
         elif user_input == '2':
             user_input = input("Enter a new value for Username: ")
-            config.set('LOGIN', 'HOST', user_input)
+            config.set('LOGIN', 'USERNAME', user_input)
             USERNAME = user_input
             continue       
         elif user_input == '3':
