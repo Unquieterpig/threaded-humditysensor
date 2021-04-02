@@ -7,8 +7,16 @@ import colorama
 import re
 import threading
 
-import plotly.express as px
-import pandas as pd
+try:
+    import plotly.express as px
+except:
+    print("plotly not found to install: pip3 install plotly")
+    exit(-1)
+try:
+    import pandas as pd
+except:
+    print("plotly not found to install: pip3 install pandas")
+    exit(-1)
 
 from plotly import offline
 from datetime import datetime
@@ -174,7 +182,7 @@ def threaded_listener(connection):
     while thread_control == 1:
         is_running = True
         try:
-            cszTemp = connection.read_until(b"}").decode('ascii')
+            cszTemp = connection.read_until(b"}", timeout=None).decode('ascii')
 
             current_time = datetime.now().strftime("%m/%d/%y %H:%M:%S")
         except EOFError:
