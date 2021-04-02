@@ -179,10 +179,13 @@ def threaded_listener(connection):
         return None
 
     print(f'{colorama.Fore.GREEN}ok{colorama.Fore.RESET}')
+    cszTemp = ""
     while thread_control == 1:
         is_running = True
         try:
-            cszTemp = connection.read_until(b"}", timeout=None).decode('ascii')
+            cszTemp = cszTemp + connection.read_until(b"}", timeout=2).decode('ascii')
+            if (cszTemp.find("}") == -1):
+                continue
 
             current_time = datetime.now().strftime("%m/%d/%y %H:%M:%S")
         except EOFError:
@@ -236,6 +239,7 @@ def threaded_listener(connection):
                 add_event(f"[RUN: {iteration}] [TEMP: {fTemperature}{cszTemperatureFormat}] [HUM: {fHumidity}%] [PRES: {fPressure}{cszTPressureFormat}] [TIME: {current_time}]", 0)
         
         iteration += 1
+        cszTemp = ""
 
     add_event(f'Collection... {colorama.Fore.GREEN}ok{colorama.Fore.RESET}', 0)
     connection.write(b"\x18")
