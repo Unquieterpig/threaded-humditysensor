@@ -183,10 +183,9 @@ def threaded_listener(connection):
     while thread_control == 1:
         is_running = True
         try:
-            cszTemp = cszTemp + connection.read_until(b"}", timeout=2).decode('ascii')
+            cszTemp = cszTemp + connection.read_until(b"}", timeout=1).decode('ascii')
             if (cszTemp.find("}") == -1):
                 continue
-
             current_time = datetime.now().strftime("%m/%d/%y %H:%M:%S")
         except EOFError:
             add_event(f'Exception at {colorama.Fore.YELLOW}{current_time}{colorama.Fore.RESET}', 1)
