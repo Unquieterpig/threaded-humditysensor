@@ -7,8 +7,16 @@ import colorama
 import re
 import threading
 
-import plotly.express as px
-import pandas as pd
+try:
+    import plotly.express as px
+except:
+    print("plotly not found to install: pip3 install plotly")
+    exit(-1)
+try:
+    import pandas as pd
+except:
+    print("plotly not found to install: pip3 install pandas")
+    exit(-1)
 
 from plotly import offline
 from datetime import datetime
@@ -171,11 +179,13 @@ def threaded_listener(connection):
         return None
 
     print(f'{colorama.Fore.GREEN}ok{colorama.Fore.RESET}')
+    cszTemp = ""
     while thread_control == 1:
         is_running = True
         try:
-            cszTemp = connection.read_until(b"}").decode('ascii')
-
+            cszTemp = cszTemp + connection.read_until(b"}", timeout=1).decode('ascii')
+            if (cszTemp.find("}") == -1):
+                continue
             current_time = datetime.now().strftime("%m/%d/%y %H:%M:%S")
         except EOFError:
             add_event(f'Exception at {colorama.Fore.YELLOW}{current_time}{colorama.Fore.RESET}', 1)
@@ -228,6 +238,7 @@ def threaded_listener(connection):
                 add_event(f"[RUN: {iteration}] [TEMP: {fTemperature}{cszTemperatureFormat}] [HUM: {fHumidity}%] [PRES: {fPressure}{cszTPressureFormat}] [TIME: {current_time}]", 0)
         
         iteration += 1
+        cszTemp = ""
 
     add_event(f'Collection... {colorama.Fore.GREEN}ok{colorama.Fore.RESET}', 0)
     connection.write(b"\x18")
