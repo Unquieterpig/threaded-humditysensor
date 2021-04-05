@@ -44,9 +44,9 @@ try:
     os.path.getsize('config.ini')
 except OSError:
     config['LOGIN'] = {
-                    'HOST': '127.0.0.1',
-                    'USERNAME': 'user1',
-                    'PASSWORD': 'password',
+                    'HOST': '192.168.168.168',
+                    'USERNAME': 'super',
+                    'PASSWORD': 'super',
                     }
     config['OTHER'] = {
                     'cszPort': 'U1',
