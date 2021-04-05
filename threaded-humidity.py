@@ -188,7 +188,7 @@ def threaded_listener(connection):
                 continue
             current_time = datetime.now().strftime("%m/%d/%y %H:%M:%S")
         except EOFError:
-            add_event(f'Exception at {colorama.Fore.YELLOW}{current_time}{colorama.Fore.RESET}', 1)
+            add_event(f'TELNET: Exception at {colorama.Fore.YELLOW}{current_time}{colorama.Fore.RESET}', 1)
 
         # Insert the csv header
         if iteration == 0:
@@ -212,7 +212,7 @@ def threaded_listener(connection):
         try:
             parsed_json = json.loads(cszTemp)
         except Exception:
-            add_event(f'Exception at {colorama.Fore.YELLOW}{current_time}{colorama.Fore.RESET}', 1)
+            add_event(f'JSON: Exception at {colorama.Fore.YELLOW}{current_time}{colorama.Fore.RESET}', 1)
         else:
             cszModule = parsed_json["module"]
             fTemperature = float(parsed_json["temperature"])
@@ -538,7 +538,7 @@ while True:
             sleep(1)
             continue
     else:
-        user_input = input(f"Status: {colorama.Fore.GREEN}Running{colorama.Fore.RESET}\nPlease Choose an Option:\n1. Stop\n2. Plot\n3. Event Log\n4. Options\n5. Exit\nSelection: ")
+        user_input = input(f"Status: {colorama.Fore.GREEN}Running{colorama.Fore.RESET} on {colorama.Fore.CYAN}{HOST}{colorama.Fore.RESET}\nPlease Choose an Option:\n1. Stop\n2. Plot\n3. Event Log\n4. Options\n5. Exit\nSelection: ")
 
         if user_input == '1':
             print('Stopping thread...', end=" ")
