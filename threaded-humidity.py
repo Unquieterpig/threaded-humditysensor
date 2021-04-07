@@ -380,7 +380,7 @@ def settings():
 
     while True:
         print(chr(27) + "[2J")
-        print(f'Plot-o-Matic v2.0 Made with {colorama.Fore.RED}<3{colorama.Fore.RESET}', end=" ")
+        print(f'Plot-o-Matic v2.1 Made with {colorama.Fore.RED}<3{colorama.Fore.RESET}', end=" ")
         print(f'\n1. Current Hostname: {HOST}\n2. Current Username: {USERNAME}\n3. Current Password: {PASSWORD}\n4. Port to Listen: {cszPort}\n5. Filename: {FILENAME}\n6. Back')
         user_input = input("Selection: ")
         if user_input == '1':
