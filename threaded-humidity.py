@@ -31,6 +31,7 @@ version_minor = version_info.minor
 
 if version_major < 3 or (version_major == 3 and version_minor < 6):
     print('This program requires Python 3.6 and above, please consider upgrading')
+    exit(1)
 
 #Initializes colorama to use text colors!
 colorama.init()
@@ -126,6 +127,14 @@ def add_event(message, type):
 
     return None
 
+def file_check(file):
+    """Checks if a file exists or not in the current directory"""
+    if os.path.isfile(file):
+        temp = True
+    else:
+        temp = False
+    return temp
+
 def connect_TelNet():
     """Tries to connect to the specified telnet server. Returns None if cannot connect"""
     try:
@@ -215,7 +224,7 @@ def threaded_listener(connection):
             add_event(f'JSON: Exception at {colorama.Fore.YELLOW}{current_time}{colorama.Fore.RESET}', 1)
         else:
             cszModule = parsed_json["module"]
-            fTemperature = float(parsed_json["temperature"])
+            fTemperature = round(float(parsed_json["temperature"]), 2)
             cszTemperatureFormat = parsed_json["format"]
             fPressure = float(parsed_json["pressure"])
             cszTPressureFormat = parsed_json["pressureformat"]
@@ -502,7 +511,14 @@ while True:
             print(chr(27) + "[2J")
             option_one()
         elif user_input == '2':
-            user_input = input(f"Please enter a csv file, include .csv. Leave blank for {FILENAME}: ")
+            while True:
+                user_input = input(f"Please enter a csv file, include .csv. Leave blank for {FILENAME}: ")
+                if file_check(user_input):
+                    break
+                elif len(user_input) == 0:
+                    break
+                else:
+                    print(f"{colorama.Fore.RED}Could not find \'{user_input}\'. Please enter a valid filename.{colorama.Fore.RESET}")
             plot_input = input(f"Which plot would you like? 0 = Temp vs. Humid : 1 = Hourly Average: ")
             print(chr(27) + "[2J")
             if len(user_input) == 0:
@@ -510,7 +526,14 @@ while True:
 
             option_two(user_input, plot_input)
         elif user_input == '3':
-            user_input = input(f"Please enter a csv file, include .csv. Leave blank for {FILENAME}: ")
+            while True:
+                user_input = input(f"Please enter a csv file, include .csv. Leave blank for {FILENAME}: ")
+                if file_check(user_input):
+                    break
+                elif len(user_input) == 0:
+                    break
+                else:
+                    print(f"{colorama.Fore.RED}Could not find \'{user_input}\'. Please enter a valid filename.{colorama.Fore.RESET}")
             plot_input = input(f"Which plot would you like? 0 = Temp vs. Humid : 1 = Hourly Average")
             print(chr(27) + "[2J")
             if len(user_input) == 0:
@@ -547,7 +570,14 @@ while True:
                 continue
             print(f'{colorama.Fore.GREEN}ok{colorama.Fore.RESET}')
         elif user_input == '2':
-            user_input = input(f"Please enter a csv file, include .csv. Leave blank for {FILENAME}: ")
+            while True:
+                user_input = input(f"Please enter a csv file, include .csv. Leave blank for {FILENAME}: ")
+                if file_check(user_input):
+                    break
+                elif len(user_input) == 0:
+                    break
+                else:
+                    print(f"{colorama.Fore.RED}Could not find \'{user_input}\'. Please enter a valid filename.{colorama.Fore.RESET}")
             plot_input = input(f"Which plot would you like? 0 = Temp vs. Humid : 1 = Hourly Average: ")
             print(chr(27) + "[2J")
             if len(user_input) == 0:
