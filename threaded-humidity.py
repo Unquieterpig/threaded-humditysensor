@@ -45,9 +45,9 @@ try:
     os.path.getsize('config.ini')
 except OSError:
     config['LOGIN'] = {
-                    'HOST': '127.0.0.1',
-                    'USERNAME': 'user1',
-                    'PASSWORD': 'password',
+                    'HOST': '192.168.168.168',
+                    'USERNAME': 'super',
+                    'PASSWORD': 'super',
                     }
     config['OTHER'] = {
                     'cszPort': 'U1',
@@ -342,8 +342,10 @@ def plot_graph(filename, plot_type):
         print(f'{colorama.Fore.GREEN}ok{colorama.Fore.RESET}')
     elif platform == 'linux':
         offline.plot(fig, filename=plot_filename, auto_open=False)
-        print(f'{colorama.Fore.RED}failed{colorama.Fore.RESET}')
-        print(f'{colorama.Fore.RED}Linux based systems have trouble displaying the graph automatically. Please open {plot_filename} manually!{colorama.Fore.RESET}')
+        cszTemp = "firefox "+plot_filename
+        if (os.system(cszTemp)): 
+	    print(f'{colorama.Fore.RED}failed{colorama.Fore.RESET}')
+	    print(f'{colorama.Fore.RED}Linux based systems have trouble displaying the graph automatically. Please open {plot_filename} manually!{colorama.Fore.RESET}')
         sleep(4)
     else:
         offline.plot(fig, filename=plot_filename, auto_open=False)
