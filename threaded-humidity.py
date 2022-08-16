@@ -256,7 +256,8 @@ def threaded_listener(connection):
 
             if int(LOGGING) == 1:
                 add_event(
-                    f"[RUN: {iteration}] [TEMP: {fTemperature}{cszTemperatureFormat}] [HUM: {fHumidity}%] [PRES: {fPressure}{cszTPressureFormat}] [TIME: {current_time}]",
+                    f"[RUN: {iteration}] [TEMP: {fTemperature}{cszTemperatureFormat}] [HUM: {fHumidity}%] "
+                    f"[PRES: {fPressure}{cszTPressureFormat}] [TIME: {current_time}]",
                     0)
 
         iteration += 1
@@ -365,7 +366,8 @@ def plot_graph(filename, plot_type):
         if os.system(cszTemp):
             print(f'{colorama.Fore.RED}failed{colorama.Fore.RESET}')
             print(
-                f'{colorama.Fore.RED}Linux based systems have trouble displaying the graph automatically. Please open {plot_filename} manually!{colorama.Fore.RESET}')
+                f'{colorama.Fore.RED}Linux based systems have trouble displaying the graph automatically. '
+                f'Please open {plot_filename} manually!{colorama.Fore.RESET}')
         sleep(4)
     else:
         offline.plot(fig, filename=plot_filename, auto_open=False)
@@ -573,7 +575,8 @@ while True:
                     break
                 else:
                     print(
-                        f"{colorama.Fore.RED}Could not find \'{user_input}\'. Please enter a valid filename.{colorama.Fore.RESET}")
+                        f"{colorama.Fore.RED}Could not find \'{user_input}\'. "
+                        f"Please enter a valid filename.{colorama.Fore.RESET}")
             plot_input = input(f"Which plot would you like? 0 = Temp vs. Humid : 1 = Hourly Average: ")
             print(chr(27) + "[2J")
             if len(user_input) == 0:
@@ -589,7 +592,8 @@ while True:
                     break
                 else:
                     print(
-                        f"{colorama.Fore.RED}Could not find \'{user_input}\'. Please enter a valid filename.{colorama.Fore.RESET}")
+                        f"{colorama.Fore.RED}Could not find \'{user_input}\'. "
+                        f"Please enter a valid filename.{colorama.Fore.RESET}")
             plot_input = input(f"Which plot would you like? 0 = Temp vs. Humid : 1 = Hourly Average")
             print(chr(27) + "[2J")
             if len(user_input) == 0:
@@ -608,7 +612,7 @@ while True:
             print(f'{colorama.Fore.GREEN}ok{colorama.Fore.RESET}')
             colorama.deinit()
             break
-        elif user_input == '99' and DEBUG == True:
+        elif DEBUG is True and user_input == '99':
             print(f"{colorama.Fore.YELLOW}DEBUG COMMAND ENTERED{colorama.Fore.RESET}")
             sleep(1)
             debug_settings()
@@ -618,7 +622,8 @@ while True:
             continue
     else:
         user_input = input(
-            f"Status: {colorama.Fore.GREEN}Running{colorama.Fore.RESET} on {colorama.Fore.CYAN}{HOST}{colorama.Fore.RESET}\nPlease Choose an Option:\n1. Stop\n2. Plot\n3. Event Log\n4. Options\n5. Exit\nSelection: ")
+            f"Status: {colorama.Fore.GREEN}Running{colorama.Fore.RESET} on {colorama.Fore.CYAN}{HOST}{colorama.Fore.RESET}"
+            f"\nPlease Choose an Option:\n1. Stop\n2. Plot\n3. Event Log\n4. Options\n5. Exit\nSelection: ")
 
         if user_input == '1':
             print('Stopping thread...', end=" ")
@@ -635,7 +640,8 @@ while True:
                     break
                 else:
                     print(
-                        f"{colorama.Fore.RED}Could not find \'{user_input}\'. Please enter a valid filename.{colorama.Fore.RESET}")
+                        f"{colorama.Fore.RED}Could not find \'{user_input}\'. "
+                        f"Please enter a valid filename.{colorama.Fore.RESET}")
             plot_input = input(f"Which plot would you like? 0 = Temp vs. Humid : 1 = Hourly Average: ")
             print(chr(27) + "[2J")
             if len(user_input) == 0:
