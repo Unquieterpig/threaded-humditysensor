@@ -14,21 +14,20 @@ from hourly_average_NODAYS_class import HourlyPlot
 
 try:
     import plotly.express as px
-except:
-    print("plotly not found to install: pip3 install plotly")
-    exit(-1)
+except ImportError(px):
+    raise ImportError("plotly not found: pip3 install plotly")
+
 try:
     import pandas as pd
-except:
-    print("plotly not found to install: pip3 install pandas")
-    exit(-1)
+except ImportError(pd):
+    ImportError("pandas not found to install: pip3 install pandas")
+
 try:
     import colorama
-except:
-    print("colorama not found to install: pip3 install colorama")
-    exit(-1)
+except ImportError(colorama):
+    ImportError("colorama not found to install: pip3 install colorama")
 
-#Initial check to see if they are running 3.6 or greater
+# Initial check to see if they are running 3.6 or greater
 version_major = version_info.major
 version_minor = version_info.minor
 
@@ -36,10 +35,10 @@ if version_major < 3 or (version_major == 3 and version_minor < 6):
     print('This program requires Python 3.6 and above, please consider upgrading')
     exit(-1)
 
-#Initializes colorama to use text colors!
+# Initializes colorama to use text colors!
 colorama.init()
 
-#Change this to where you stored your files for Windows to find them correctly
+# Change this to where you stored your files for Windows to find them correctly
 if platform == 'win32':
     os.chdir('C:/python/humidity')
 
@@ -48,18 +47,19 @@ try:
     os.path.getsize('config.ini')
 except OSError:
     config['LOGIN'] = {
-                    'HOST': '192.168.168.168',
-                    'USERNAME': 'super',
-                    'PASSWORD': 'super',
-                    }
+        'HOST': '192.168.168.168',
+        'USERNAME': 'super',
+        'PASSWORD': 'super',
+    }
     config['OTHER'] = {
-                    'cszPort': 'U1',
-                    'filename': 'humidity',
-                    'logging': 1,
-                    }
+        'cszPort': 'U1',
+        'filename': 'humidity',
+        'logging': 1,
+        'retries': 5,
+    }
     config['EXPERIMENTAL'] = {
-                    'DEBUG': 'False',
-                    }
+        'DEBUG': 'False',
+    }
 
     with open('config.ini', 'w') as f:
         config.write(f)
@@ -73,6 +73,7 @@ PASSWORD = config['LOGIN']['PASSWORD']
 cszPort = config['OTHER']['cszPort']
 FILENAME = config['OTHER']['filename']
 LOGGING = config['OTHER']['logging']
+RETRIES = config['OTHER']['retries']
 DEBUG = config['EXPERIMENTAL']['DEBUG']
 
 # Convert strings into bool
@@ -85,7 +86,7 @@ elif DEBUG == 'False':
 if DEBUG:
     from random import randint
 
-# append .csv at the end of the filename if its not there
+# append .csv at the end of the filename if it's not there
 if FILENAME.find('.csv') == -1:
     FILENAME += '.csv'
 
@@ -95,11 +96,13 @@ is_running = None
 event_log = []
 thread_control = 0
 
+
 def escape_ansi(line):
     ansi_escape = re.compile(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]')
     return ansi_escape.sub('', line)
 
-def add_event(message, type):
+
+def add_event(message, severity_type):
     """Adds a message to the event log"""
     # Severity of type:
     # 0 = Normal
@@ -120,15 +123,16 @@ def add_event(message, type):
 
     message = escape_ansi(message)
 
-    eventTemp = [
+    event_temp = [
         f'"{message}"',
-        f'"{type}"',
-                ]
+        f'"{severity_type}"',
+    ]
     with open('eventlog.csv', 'a', newline='') as file:
         writer = csv.writer(file, quotechar="'")
-        writer.writerow(eventTemp)
+        writer.writerow(event_temp)
 
     return None
+
 
 def file_check(file):
     """Checks if a file exists or not in the current directory"""
@@ -138,7 +142,8 @@ def file_check(file):
         temp = False
     return temp
 
-def connect_TelNet():
+
+def connect_telnet():
     """Tries to connect to the specified telnet server. Returns None if cannot connect"""
     try:
         tn = telnetlib.Telnet(HOST, timeout=5)
@@ -147,7 +152,8 @@ def connect_TelNet():
     else:
         return tn
 
-def login_TelNet(client_connection):
+
+def login_telnet(client_connection):
     """Tries to log into the specified telnet server. Returns None if cannot connect"""
     client_connection.read_until(b"login: ")
     client_connection.write(USERNAME.encode('ascii') + b"\n")
@@ -163,9 +169,10 @@ def login_TelNet(client_connection):
     else:
         return response
 
-def port_TelNet(client_connection):
+
+def port_telnet(client_connection):
     """Tries to connect to the specified port on the telnet server. Returns None if cannot connect / port is busy"""
-    client_connection.write(b"/c "+cszPort.encode('ascii') + b"\r\n")
+    client_connection.write(b"/c " + cszPort.encode('ascii') + b"\r\n")
 
     response = client_connection.read_until(b"\n", timeout=5).decode('ascii')
     if "Busy." in response:
@@ -176,6 +183,7 @@ def port_TelNet(client_connection):
         return response
     else:
         return None
+
 
 def threaded_listener(connection):
     """Listens to the port... Multithreaded style!"""
@@ -196,7 +204,7 @@ def threaded_listener(connection):
         is_running = True
         try:
             cszTemp = cszTemp + connection.read_until(b"}", timeout=1).decode('ascii')
-            if (cszTemp.find("}") == -1):
+            if cszTemp.find("}") == -1:
                 continue
             current_time = datetime.now().strftime("%m/%d/%y %H:%M:%S")
         except EOFError:
@@ -241,14 +249,16 @@ def threaded_listener(connection):
                 f'"{cszTPressureFormat}"',
                 f'"{fHumidity}"',
                 f'"{cszModule}"',
-                ]
+            ]
             with open(FILENAME, 'a', newline='') as file:
                 writer = csv.writer(file, quotechar="'")
                 writer.writerow(cszTemp)
-        
+
             if int(LOGGING) == 1:
-                add_event(f"[RUN: {iteration}] [TEMP: {fTemperature}{cszTemperatureFormat}] [HUM: {fHumidity}%] [PRES: {fPressure}{cszTPressureFormat}] [TIME: {current_time}]", 0)
-        
+                add_event(
+                    f"[RUN: {iteration}] [TEMP: {fTemperature}{cszTemperatureFormat}] [HUM: {fHumidity}%] [PRES: {fPressure}{cszTPressureFormat}] [TIME: {current_time}]",
+                    0)
+
         iteration += 1
         cszTemp = ""
 
@@ -266,46 +276,51 @@ def threaded_listener(connection):
 
     is_running = False
 
-def establish_TelNet():
+
+def establish_telnet():
     """Connects, logs in, and checks port"""
     # Initial telnet connection
     print(f'Connecting to {HOST}...', end=" ")
-    tn_connection = connect_TelNet()
+    tn_connection = connect_telnet()
     if tn_connection:
         print(f'{colorama.Fore.GREEN}ok{colorama.Fore.RESET}')
     else:
         print(f'{colorama.Fore.RED}failed{colorama.Fore.RESET}')
         if not DEBUG:
-            exit(2)
+            sleep(2)
+            return None
         else:
             print(f'{colorama.Fore.YELLOW}DEBUG ENABLED, SKIPPING CONNECTION{colorama.Fore.RESET}')
-    
+
     # Log in attempt to server
     print(f'Logging into {HOST} as {USERNAME}...', end=" ")
-    tn_response = login_TelNet(tn_connection)
+    tn_response = login_telnet(tn_connection)
     if tn_response:
         print(f'{colorama.Fore.GREEN}ok{colorama.Fore.RESET}')
     else:
         print(f'{colorama.Fore.RED}failed{colorama.Fore.RESET}')
         if not DEBUG:
-            exit(2)
+            sleep(2)
+            return None
         else:
             print(f'{colorama.Fore.YELLOW}DEBUG ENABLED, SKIPPING LOGIN{colorama.Fore.RESET}')
 
     # Connect to port
     print(f'Connecting to port {cszPort}...', end=" ")
-    tn_response = port_TelNet(tn_connection)
+    tn_response = port_telnet(tn_connection)
     if tn_response:
         print(f'{colorama.Fore.GREEN}ok{colorama.Fore.RESET}')
     else:
         print(f'{colorama.Fore.RED}failed{colorama.Fore.RESET}')
         if not DEBUG:
             print(f'{colorama.Fore.RED}COULD NOT BIND TO PORT{colorama.Fore.RESET}')
-            exit(2)
+            sleep(2)
+            return None
         else:
             print(f'{colorama.Fore.YELLOW}DEBUG ENABLED, SKIPPING PORT CONNECTION{colorama.Fore.RESET}')
-    
+
     return tn_connection
+
 
 def plot_graph(filename, plot_type):
     # Plot type: 0 = temp vs humidity, 1 = 24 hour averages
@@ -316,15 +331,16 @@ def plot_graph(filename, plot_type):
         print(f'{colorama.Fore.RED}failed{colorama.Fore.RESET}')
         print(f'{colorama.Fore.RED}csv is empty! Gather some data to build plot!{colorama.Fore.RESET}')
         exit(2)
-    
+
     plot_type = int(plot_type)
     # Gets rid of the .csv and appends .html to it
     plot_filename = FILENAME[:-4] + '.html'
 
     if plot_type == 0:
 
-        fig = px.line(df, x = 'TIME', y = ['TEMP', 'HUMIDITY',],title='Time vs. Temperature vs. Humidity', template='plotly_dark')
-        fig.update_xaxes(nticks= 24)
+        fig = px.line(df, x='TIME', y=['TEMP', 'HUMIDITY', ], title='Time vs. Temperature vs. Humidity',
+                      template='plotly_dark')
+        fig.update_xaxes(nticks=24)
         fig.update_traces(mode="lines", hovertemplate=None)
         fig.update_layout(hovermode="x unified")
     elif plot_type == 1:
@@ -345,10 +361,11 @@ def plot_graph(filename, plot_type):
         print(f'{colorama.Fore.GREEN}ok{colorama.Fore.RESET}')
     elif platform == 'linux':
         offline.plot(fig, filename=plot_filename, auto_open=False)
-        cszTemp = "firefox "+plot_filename
-        if (os.system(cszTemp)): 
-	    print(f'{colorama.Fore.RED}failed{colorama.Fore.RESET}')
-	    print(f'{colorama.Fore.RED}Linux based systems have trouble displaying the graph automatically. Please open {plot_filename} manually!{colorama.Fore.RESET}')
+        cszTemp = "firefox " + plot_filename
+        if os.system(cszTemp):
+            print(f'{colorama.Fore.RED}failed{colorama.Fore.RESET}')
+            print(
+                f'{colorama.Fore.RED}Linux based systems have trouble displaying the graph automatically. Please open {plot_filename} manually!{colorama.Fore.RESET}')
         sleep(4)
     else:
         offline.plot(fig, filename=plot_filename, auto_open=False)
@@ -356,12 +373,31 @@ def plot_graph(filename, plot_type):
         print(f'{colorama.Fore.RED}Unknown OS, please open {plot_filename} manually!{colorama.Fore.RESET}')
         sleep(4)
 
+
 def option_one():
-    '''Only listens for data'''
+    """Only listens for data"""
     global thread_control
     # establish telnet connect to target host
-    tn_connection = establish_TelNet()
-    
+    tn_connection = establish_telnet()
+
+    # Retries connect if failed.
+    try:
+        if tn_connection is None:
+            raise TypeError
+    except TypeError:
+        for iteration in range(int(RETRIES)):
+            print(f"Failed to connect retrying... ({iteration + 1}/{RETRIES})")
+            tn_connection = establish_telnet()
+
+            if tn_connection is None:
+                continue
+            else:
+                break
+        else:
+            print(f"Could not connect after {RETRIES} retries, returning to main menu...")
+            sleep(1)
+            return None
+
     thread_control = 1
     t1 = threading.Thread(target=threaded_listener, args=(tn_connection,))
     t1.start()
@@ -369,22 +405,26 @@ def option_one():
     print("Returning to main menu...")
     sleep(2)
 
+
 def option_two(filename, plot_type):
-    '''Only graphs the data'''
+    """Only graphs the data"""
     # Construct a graph from the data
     plot_graph(filename, plot_type)
+
 
 # User Interface
 
 # Settings loop
 def settings():
     # Get our globals
-    global config, HOST, USERNAME, PASSWORD, cszPort, FILENAME
+    global config, HOST, USERNAME, PASSWORD, cszPort, FILENAME, RETRIES
 
     while True:
         print(chr(27) + "[2J")
         print(f'Plot-o-Matic v2.1 Made with {colorama.Fore.RED}<3{colorama.Fore.RESET}', end=" ")
-        print(f'\n1. Current Hostname: {HOST}\n2. Current Username: {USERNAME}\n3. Current Password: {PASSWORD}\n4. Port to Listen: {cszPort}\n5. Filename: {FILENAME}\n6. Back')
+        print(
+            f'\n1. Current Hostname: {HOST}\n2. Current Username: {USERNAME}\n3. Current Password: {PASSWORD}\n4. '
+            f'Port to Listen: {cszPort}\n5. Filename: {FILENAME}\n6. Retries: {RETRIES}\n7. Back')
         user_input = input("Selection: ")
         if user_input == '1':
             user_input = input("Enter a new value for Hostname: ")
@@ -395,7 +435,7 @@ def settings():
             user_input = input("Enter a new value for Username: ")
             config.set('LOGIN', 'USERNAME', user_input)
             USERNAME = user_input
-            continue       
+            continue
         elif user_input == '3':
             user_input = input("Enter a new value for Password: ")
             config.set('LOGIN', 'PASSWORD', user_input)
@@ -408,7 +448,7 @@ def settings():
             continue
         elif user_input == '5':
             user_input = input("Enter a new value for filename: ")
-            
+
             if user_input.find('.csv') != -1:
                 FILENAME = user_input
             else:
@@ -417,9 +457,15 @@ def settings():
             config.set('OTHER', 'filename', user_input)
             continue
         elif user_input == '6':
+            user_input = input("Enter a new value for retries: ")
+            config.set('OTHER', 'retries', user_input)
+            RETRIES = user_input
+            continue
+        elif user_input == '7':
             with open('config.ini', 'w') as configfile:
                 config.write(configfile)
             break
+
 
 # Debug settings loop
 def debug_settings():
@@ -475,7 +521,7 @@ def debug_settings():
         elif user_input == '5':
             while True:
                 print(chr(27) + "[2J")
-                if int(LOGGING) == 1: 
+                if int(LOGGING) == 1:
                     print('Currently set to: Everything')
                 elif int(LOGGING) == 2:
                     print('Currently set to: Only update messages')
@@ -485,17 +531,17 @@ def debug_settings():
                 user_log = input('Selection: ')
 
                 if user_log == '1':
-                    config.set('OTHER', 'LOGGING', 1)
+                    config.set('OTHER', 'LOGGING', str(1))
                     LOGGING = 1
                 elif user_log == '2':
-                    config.set('OTHER', 'LOGGING', 2)
+                    config.set('OTHER', 'LOGGING', str(2))
                     LOGGING = 2
                 elif user_log == '3':
                     break
                 else:
                     print(f"{colorama.Fore.RED} Invalid selection, please try again")
                     sleep(1)
-                    continue                    
+                    continue
 
         elif user_input == '6':
             with open('config.ini', 'w') as configfile:
@@ -506,11 +552,14 @@ def debug_settings():
             sleep(1)
             continue
 
+
 # Main loop
 while True:
     print(chr(27) + "[2J")
     if not is_running:
-        user_input = input(f"Status: {colorama.Fore.RED}Stopped{colorama.Fore.RESET}\nPlease Choose an Option:\n1. Only Listen\n2. Only Plot\n3. Listen and Plot\n4. Options\n5. Exit\nSelection: ")
+        user_input = input(
+            f"Status: {colorama.Fore.RED}Stopped{colorama.Fore.RESET}\nPlease Choose an Option:\n1. Only Listen"
+            f"\n2. Only Plot\n3. Listen and Plot\n4. Options\n5. Exit\nSelection: ")
 
         if user_input == '1':
             print(chr(27) + "[2J")
@@ -523,7 +572,8 @@ while True:
                 elif len(user_input) == 0:
                     break
                 else:
-                    print(f"{colorama.Fore.RED}Could not find \'{user_input}\'. Please enter a valid filename.{colorama.Fore.RESET}")
+                    print(
+                        f"{colorama.Fore.RED}Could not find \'{user_input}\'. Please enter a valid filename.{colorama.Fore.RESET}")
             plot_input = input(f"Which plot would you like? 0 = Temp vs. Humid : 1 = Hourly Average: ")
             print(chr(27) + "[2J")
             if len(user_input) == 0:
@@ -538,7 +588,8 @@ while True:
                 elif len(user_input) == 0:
                     break
                 else:
-                    print(f"{colorama.Fore.RED}Could not find \'{user_input}\'. Please enter a valid filename.{colorama.Fore.RESET}")
+                    print(
+                        f"{colorama.Fore.RED}Could not find \'{user_input}\'. Please enter a valid filename.{colorama.Fore.RESET}")
             plot_input = input(f"Which plot would you like? 0 = Temp vs. Humid : 1 = Hourly Average")
             print(chr(27) + "[2J")
             if len(user_input) == 0:
@@ -552,7 +603,7 @@ while True:
             print('Thanks for using the Plot-o-Matic!')
             print('Stopping thread...', end=" ")
             thread_control = 0
-            while is_running == True:
+            while is_running:
                 sleep(1)
             print(f'{colorama.Fore.GREEN}ok{colorama.Fore.RESET}')
             colorama.deinit()
@@ -560,18 +611,19 @@ while True:
         elif user_input == '99' and DEBUG == True:
             print(f"{colorama.Fore.YELLOW}DEBUG COMMAND ENTERED{colorama.Fore.RESET}")
             sleep(1)
-            debug_settings()  
+            debug_settings()
         else:
             print(f"{colorama.Fore.RED} Invalid selection, please try again{colorama.Fore.RESET}")
             sleep(1)
             continue
     else:
-        user_input = input(f"Status: {colorama.Fore.GREEN}Running{colorama.Fore.RESET} on {colorama.Fore.CYAN}{HOST}{colorama.Fore.RESET}\nPlease Choose an Option:\n1. Stop\n2. Plot\n3. Event Log\n4. Options\n5. Exit\nSelection: ")
+        user_input = input(
+            f"Status: {colorama.Fore.GREEN}Running{colorama.Fore.RESET} on {colorama.Fore.CYAN}{HOST}{colorama.Fore.RESET}\nPlease Choose an Option:\n1. Stop\n2. Plot\n3. Event Log\n4. Options\n5. Exit\nSelection: ")
 
         if user_input == '1':
             print('Stopping thread...', end=" ")
             thread_control = 0
-            while is_running == True:
+            while is_running:
                 continue
             print(f'{colorama.Fore.GREEN}ok{colorama.Fore.RESET}')
         elif user_input == '2':
@@ -582,7 +634,8 @@ while True:
                 elif len(user_input) == 0:
                     break
                 else:
-                    print(f"{colorama.Fore.RED}Could not find \'{user_input}\'. Please enter a valid filename.{colorama.Fore.RESET}")
+                    print(
+                        f"{colorama.Fore.RED}Could not find \'{user_input}\'. Please enter a valid filename.{colorama.Fore.RESET}")
             plot_input = input(f"Which plot would you like? 0 = Temp vs. Humid : 1 = Hourly Average: ")
             print(chr(27) + "[2J")
             if len(user_input) == 0:
@@ -604,15 +657,15 @@ while True:
             print('Thanks for using the Plot-o-Matic!')
             print('Stopping thread...', end=" ")
             thread_control = 0
-            while is_running == True:
+            while is_running:
                 continue
             print(f'{colorama.Fore.GREEN}ok{colorama.Fore.RESET}')
             colorama.deinit()
             break
-        elif user_input == '99' and DEBUG == True:
+        elif DEBUG is True and user_input == '99':
             print(f"{colorama.Fore.YELLOW}DEBUG COMMAND ENTERED{colorama.Fore.RESET}")
             sleep(1)
-            debug_settings()  
+            debug_settings()
         else:
             print(f"{colorama.Fore.RED} Invalid selection, please try again{colorama.Fore.RESET}")
             sleep(1)
